@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#10251c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AI智营宝" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>AI智营宝 - AI照片识别版</title>
+    <style>
+:root {
+  color-scheme: light;
+  --bg: #f5f7f4;
+  --surface: #ffffff;
+  --ink: #1e2b24;
+  --muted: #65756b;
+  --line: #dce4dd;
+  --green: #2f8a57;
+  --mint: #dff2e7;
+  --tomato: #d9634f;
+  --gold: #d8a637;
+  --blue: #417d9a;
+  --shadow: 0 18px 50px rgba(34, 57, 44, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+button, input, select { font: inherit; }
+.app-shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh; padding: 28px 22px; background: #10251c; color: #f6fff9;
+  display: flex; flex-direction: column; gap: 28px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--mint); color: #123324; font-weight: 800;
+}
+.brand span, .wearable-card small {
+  display: block; margin-top: 4px; color: rgba(246, 255, 249, 0.68); font-size: 13px; line-height: 1.5;
+}
+.nav-list { display: grid; gap: 8px; }
+.nav-list a { color: rgba(246, 255, 249, 0.78); text-decoration: none; padding: 12px 14px; border-radius: 8px; }
+.nav-list a.active, .nav-list a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.wearable-card {
+  margin-top: auto; display: flex; gap: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; background: rgba(255,255,255,0.06);
+}
+.status-dot {
+  width: 11px; height: 11px; margin-top: 5px; border-radius: 50%; background: #78e0a1;
+  box-shadow: 0 0 0 5px rgba(120,224,161,0.14);
+}
+main { padding: 28px; display: grid; gap: 22px; }
+.topbar, .panel-heading, .chat-row, .segmented, .upload-row, .recognition-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+}
+.eyebrow { margin: 0 0 6px; color: var(--green); font-size: 13px; font-weight: 700; text-transform: uppercase; }
+h1,h2,p { margin-top: 0; }
+h1 { margin-bottom: 0; font-size: 34px; line-height: 1.2; }
+h2 { margin-bottom: 0; font-size: 18px; }
+.icon-button {
+  width: 44px; height: 44px; border: 0; border-radius: 8px; background: var(--surface); color: var(--green);
+  box-shadow: var(--shadow); cursor: pointer; font-size: 22px;
+}
+.hero-panel {
+  display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; padding: 26px; border-radius: 8px;
+  background: linear-gradient(120deg, rgba(223,242,231,0.94), rgba(255,255,255,0.88)), radial-gradient(circle at 90% 15%, rgba(216,166,55,0.35), transparent 34%);
+  box-shadow: var(--shadow);
+}
+.hero-copy p { max-width: 680px; color: var(--muted); font-size: 18px; line-height: 1.8; }
+.quick-stats { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 12px; margin-top: 26px; }
+.quick-stats div, .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.quick-stats div { padding: 16px; }
+.quick-stats strong { display: block; font-size: 28px; }
+.quick-stats span, .panel-heading span, .nutrition-card span, .model-note { color: var(--muted); font-size: 13px; }
+.plate-visual { display: grid; place-items: center; min-height: 280px; }
+.grid-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.panel { padding: 22px; box-shadow: 0 8px 28px rgba(34,57,44,0.06); }
+.input-panel form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+label, legend { color: var(--muted); font-size: 13px; }
+input, select {
+  width: 100%; margin-top: 7px; border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px;
+  background: #fbfdfb; color: var(--ink);
+}
+input[type="range"] { padding: 0; accent-color: var(--green); }
+output { display: block; margin-top: 4px; color: var(--ink); font-weight: 700; }
+fieldset {
+  grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-wrap: wrap; gap: 10px 18px;
+}
+.check { display: flex; align-items: center; gap: 7px; }
+.check input { width: auto; margin: 0; }
+.food-stage {
+  position: relative; margin: 18px 0; min-height: 280px; border-radius: 8px; overflow: hidden; background: #eef4ed;
+}
+.food-image {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 48% 50%, #f4f0df 0 25%, transparent 26%), radial-gradient(circle at 37% 42%, #69a874 0 11%, transparent 12%), radial-gradient(circle at 58% 37%, #f0c75e 0 10%, transparent 11%), radial-gradient(circle at 58% 61%, #d87b63 0 12%, transparent 13%), radial-gradient(circle at 40% 62%, #8b684d 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, #ffffff 0 41%, #d8dfd7 42% 45%, transparent 46%);
+}
+.food-image.noodle {
+  background: radial-gradient(ellipse at 50% 50%, #f1d588 0 28%, transparent 29%), radial-gradient(circle at 42% 42%, #56a067 0 8%, transparent 9%), radial-gradient(circle at 61% 59%, #cf5546 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, #ffffff 0 41%, #d8dfd7 42% 45%, transparent 46%);
+}
+.food-image.salad {
+  background: radial-gradient(circle at 42% 45%, #5ba96a 0 14%, transparent 15%), radial-gradient(circle at 58% 42%, #98c96e 0 12%, transparent 13%), radial-gradient(circle at 56% 62%, #e26e58 0 8%, transparent 9%), radial-gradient(circle at 39% 61%, #efc65a 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, #ffffff 0 41%, #d8dfd7 42% 45%, transparent 46%);
+}
+.food-image.has-upload { background-position: center; background-size: cover; background-repeat: no-repeat; }
+.nutrition-card {
+  position: absolute; right: 16px; bottom: 16px; left: 16px; padding: 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.92); box-shadow: var(--shadow);
+}
+.nutrition-card strong, .nutrition-card span { display: block; }
+.segmented { justify-content: stretch; }
+.segmented button, .chat-row button, .upload-btn {
+  border: 0; border-radius: 8px; padding: 11px 14px; background: #eef4ef; color: var(--ink); cursor: pointer;
+}
+.segmented button { flex: 1; }
+.segmented button.selected, .chat-row button, .upload-btn { background: var(--green); color: #ffffff; }
+.upload-box {
+  margin-top: 14px; padding: 14px; border: 1px dashed var(--green); border-radius: 8px; background: #f7fbf8;
+}
+.upload-label {
+  display: inline-block; padding: 10px 14px; border-radius: 8px; background: var(--green); color: #fff; cursor: pointer; font-weight: 700;
+}
+.upload-label input { display: none; }
+.upload-hint, .recognition-note, .model-note { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.recognition-result, .model-status, .prediction-list {
+  margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #eef4ef; font-size: 14px;
+}
+.model-status.loading { background: #fff5db; }
+.model-status.ready { background: #e8f7ee; }
+.model-status.error { background: #fdecea; color: #8b2c22; }
+.recognition-badge {
+  display: inline-block; padding: 5px 10px; border-radius: 999px; background: #e8f7ee; color: var(--green); font-weight: 700; font-size: 12px;
+}
+.prediction-list ul { margin: 8px 0 0; padding-left: 20px; }
+.prediction-list li { margin: 5px 0; }
+.recommendations { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; }
+.recommendations li { border-left: 4px solid var(--green); background: #f7fbf8; border-radius: 8px; padding: 13px 14px; line-height: 1.65; }
+.coach-message { min-height: 118px; margin: 18px 0; padding: 16px; border-radius: 8px; background: #f7fbf8; color: var(--ink); line-height: 1.7; }
+.chat-row input { margin: 0; }
+.chat-row button { min-width: 74px; }
+.community-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.community-grid div { min-height: 130px; padding: 16px; border-radius: 8px; background: #f7fbf8; }
+.community-grid p { margin: 10px 0 0; color: var(--muted); line-height: 1.65; }
+.hidden-preview { display: none; }
+@media (max-width: 980px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .hero-panel, .grid-layout, .community-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  main { padding: 18px; }
+  h1 { font-size: 28px; }
+  .quick-stats, .input-panel form { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; }
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="主导航">
+        <div class="brand">
+          <div class="brand-mark">AI</div>
+          <div>
+            <strong>AI智营宝</strong>
+            <span>智能健康与营养管理助手 · AI照片识别版</span>
+          </div>
+        </div>
+        <nav class="nav-list">
+          <a href="#dashboard" class="active">今日总览</a>
+          <a href="#analysis">营养分析</a>
+          <a href="#coach">健康教练</a>
+          <a href="#community">社区支持</a>
+        </nav>
+        <div class="wearable-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong>手环已同步</strong>
+            <small>心率、步数、睡眠、血糖趋势</small>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <section class="topbar" id="dashboard">
+          <div>
+            <p class="eyebrow">Personal Nutrition Intelligence</p>
+            <h1>今日动态饮食方案</h1>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="icon-button" id="installApp" title="安装到主屏幕" aria-label="安装到主屏幕" style="display:none;">＋</button>
+            <button class="icon-button" id="refreshPlan" title="重新生成建议" aria-label="重新生成建议">↻</button>
+          </div>
+        </section>
+
+        <section class="hero-panel">
+          <div class="hero-copy">
+            <p>根据身体数据、餐食记录和健康目标，实时生成营养建议。现已支持使用视觉 AI 对上传照片进行识别，并将识别结果用于营养推荐。</p>
+            <div class="quick-stats" aria-label="今日健康摘要">
+              <div><strong id="scoreValue">86</strong><span>健康评分</span></div>
+              <div><strong id="calorieValue">1640</strong><span>建议热量</span></div>
+              <div><strong id="proteinValue">78g</strong><span>蛋白目标</span></div>
+            </div>
+          </div>
+          <div class="plate-visual" aria-label="膳食平衡图">
+            <canvas id="plateCanvas" width="280" height="280"></canvas>
+          </div>
+        </section>
+
+        <section class="grid-layout">
+          <article class="panel input-panel" id="analysis">
+            <div class="panel-heading">
+              <h2>身体与目标</h2>
+              <span id="riskTag">代谢风险低</span>
+            </div>
+            <form id="profileForm">
+              <label>
+                目标
+                <select id="goal">
+                  <option value="balance">均衡维持</option>
+                  <option value="fatLoss">控糖减脂</option>
+                  <option value="muscle">增肌恢复</option>
+                  <option value="heart">心血管友好</option>
+                </select>
+              </label>
+              <label>
+                年龄
+                <input id="age" type="number" min="12" max="90" value="29" />
+              </label>
+              <label>
+                睡眠时长
+                <input id="sleep" type="range" min="3" max="10" step="0.5" value="7" />
+                <output id="sleepOutput">7 小时</output>
+              </label>
+              <label>
+                今日步数
+                <input id="steps" type="number" min="0" max="50000" step="500" value="8200" />
+              </label>
+              <label>
+                餐后血糖趋势
+                <select id="glucose">
+                  <option value="stable">稳定</option>
+                  <option value="rise">偏高</option>
+                  <option value="drop">偏低</option>
+                </select>
+              </label>
+              <fieldset>
+                <legend>饮食限制</legend>
+                <label class="check"><input type="checkbox" value="lactose" /> 乳糖不耐</label>
+                <label class="check"><input type="checkbox" value="lowSalt" /> 低盐</label>
+                <label class="check"><input type="checkbox" value="vegetarian" /> 素食优先</label>
+              </fieldset>
+            </form>
+          </article>
+
+          <article class="panel food-panel">
+            <div class="panel-heading">
+              <h2>AI照片识别</h2>
+              <span>真实视觉模型</span>
+            </div>
+            <div id="modelStatus" class="model-status loading">正在加载 AI 图像识别模型（MobileNet）… 首次加载需要联网。</div>
+            <div class="upload-box">
+              <div class="upload-row">
+                <label class="upload-label">拍照 / 选择餐食照片
+                  <input id="foodPhoto" type="file" accept="image/*" capture="environment" />
+                </label>
+                <span id="photoFileName" class="upload-hint">支持 JPG、PNG、WEBP；照片仅在本机浏览器中处理。</span>
+              </div>
+              <div class="recognition-summary">
+                <span class="recognition-badge" id="aiModeBadge">AI识别未开始</span>
+                <span class="model-note">当前使用通用视觉 AI 模型识别照片内容，再映射到本系统的餐食类别。</span>
+              </div>
+              <div id="recognitionResult" class="recognition-result">请先等待模型加载完成，然后上传照片进行识别。</div>
+              <div id="predictionList" class="prediction-list">Top-5 预测结果将在这里显示。</div>
+            </div>
+            <div class="food-stage">
+              <div class="food-image" id="foodImage" role="img" aria-label="餐食照片或餐盘示意图"></div>
+              <div class="nutrition-card">
+                <strong id="foodName">鸡胸藜麦碗</strong>
+                <span id="foodMacro">520 kcal · 蛋白 42g · 脂肪 15g</span>
+              </div>
+            </div>
+            <div class="segmented" aria-label="手动修正餐食">
+              <button class="selected" data-food="bowl">轻食碗</button>
+              <button data-food="noodle">面食</button>
+              <button data-food="salad">沙拉</button>
+            </div>
+            <div class="recognition-note">提示：这是“真正的 AI 图片识别”，不再按文件名判断。若 AI 识别不准确，可在下方手动修正餐食类别。</div>
+            <div class="recognition-note">手机端：点击“拍照 / 选择餐食照片”可直接调起后置摄像头；浏览器支持时，可通过右上角“＋”安装到主屏幕。</div>
+            <img id="previewImg" class="hidden-preview" alt="预览图" />
+          </article>
+
+          <article class="panel recommendation-panel">
+            <div class="panel-heading">
+              <h2>个性化推荐</h2>
+              <span id="updatedAt">刚刚更新</span>
+            </div>
+            <ul class="recommendations" id="recommendations"></ul>
+          </article>
+
+          <article class="panel coach-panel" id="coach">
+            <div class="panel-heading">
+              <h2>虚拟健康教练</h2>
+              <span>可解释建议</span>
+            </div>
+            <div class="coach-message" id="coachMessage"></div>
+            <div class="chat-row">
+              <input id="coachInput" placeholder="输入：晚餐吃什么？" />
+              <button id="askCoach">发送</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel community-panel" id="community">
+          <div class="panel-heading">
+            <h2>社区支持</h2>
+            <span>连续打卡 12 天</span>
+          </div>
+          <div class="community-grid">
+            <div>
+              <strong>控糖早餐挑战</strong>
+              <p>本周目标：早餐添加优质蛋白，减少含糖饮品。</p>
+            </div>
+            <div>
+              <strong>晚餐轻负担小组</strong>
+              <p>今日讨论：运动后如何补充碳水与蛋白。</p>
+            </div>
+            <div>
+              <strong>家庭营养共享</strong>
+              <p>同步家人偏好，生成一桌多目标菜单。</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+const state = {
+  goal: "balance",
+  age: 29,
+  sleep: 7,
+  steps: 8200,
+  glucose: "stable",
+  restrictions: [],
+  food: "bowl",
+  uploadedImage: null,
+  aiPredictions: [],
+  aiMatchedCategory: null,
+  aiMatchedConfidence: 0,
+};
+
+const foods = {
+  bowl: { name: "鸡胸藜麦碗", macro: "520 kcal · 蛋白 42g · 脂肪 15g", carbs: 34, protein: 42, fat: 15 },
+  noodle: { name: "番茄牛肉面", macro: "690 kcal · 蛋白 31g · 碳水 92g", carbs: 92, protein: 31, fat: 21 },
+  salad: { name: "牛油果彩蔬沙拉", macro: "410 kcal · 蛋白 18g · 脂肪 24g", carbs: 28, protein: 18, fat: 24 }
+};
+
+const goalText = {
+  balance: "均衡维持",
+  fatLoss: "控糖减脂",
+  muscle: "增肌恢复",
+  heart: "心血管友好"
+};
+
+const categoryMeta = {
+  bowl: { label: "轻食碗", tags: ["bowl", "rice", "bibimbap", "burrito", "omelet", "chicken", "meat loaf", "fried rice", "plate"] },
+  noodle: { label: "面食", tags: ["noodle", "ramen", "spaghetti", "pasta", "carbonara", "macaroni", "lasagna", "udon", "pho", "soup bowl", "consomme"] },
+  salad: { label: "沙拉", tags: ["salad", "broccoli", "vegetable", "cabbage", "lettuce", "cucumber", "guacamole", "bell pepper", "zucchini", "caesar"] }
+};
+
+const recommendations = document.querySelector("#recommendations");
+const coachMessage = document.querySelector("#coachMessage");
+const plateCanvas = document.querySelector("#plateCanvas");
+const ctx = plateCanvas.getContext("2d");
+const previewImg = document.querySelector("#previewImg");
+const modelStatusEl = document.querySelector("#modelStatus");
+const predictionListEl = document.querySelector("#predictionList");
+const recognitionResultEl = document.querySelector("#recognitionResult");
+const aiModeBadgeEl = document.querySelector("#aiModeBadge");
+let model = null;
+
+function collectState() {
+  state.goal = document.querySelector("#goal").value;
+  state.age = Number(document.querySelector("#age").value);
+  state.sleep = Number(document.querySelector("#sleep").value);
+  state.steps = Number(document.querySelector("#steps").value);
+  state.glucose = document.querySelector("#glucose").value;
+  state.restrictions = [...document.querySelectorAll("fieldset input:checked")].map((item) => item.value);
+  document.querySelector("#sleepOutput").textContent = `${state.sleep} 小时`;
+}
+
+function buildPlan() {
+  const food = foods[state.food];
+  const activeScore = Math.min(18, Math.floor(state.steps / 700));
+  const sleepScore = Math.max(0, Math.round((state.sleep - 4) * 7));
+  const glucosePenalty = state.glucose === "rise" ? 12 : state.glucose === "drop" ? 7 : 0;
+  const score = Math.max(45, Math.min(98, 58 + activeScore + sleepScore - glucosePenalty));
+  const calorieBase = state.goal === "fatLoss" ? 1500 : state.goal === "muscle" ? 2050 : state.goal === "heart" ? 1680 : 1780;
+  const calorie = calorieBase + (state.steps > 10000 ? 120 : 0) - (state.glucose === "rise" ? 90 : 0);
+  const protein = state.goal === "muscle" ? 105 : state.goal === "fatLoss" ? 86 : 78;
+
+  document.querySelector("#scoreValue").textContent = score;
+  document.querySelector("#calorieValue").textContent = calorie;
+  document.querySelector("#proteinValue").textContent = `${protein}g`;
+  document.querySelector("#riskTag").textContent = score >= 82 ? "代谢风险低" : score >= 68 ? "需要关注血糖" : "建议优化作息";
+  document.querySelector("#updatedAt").textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+
+  const aiLine = state.aiMatchedCategory
+    ? `AI识别到照片更接近「${categoryMeta[state.aiMatchedCategory].label}」类餐食，匹配置信参考值 ${(state.aiMatchedConfidence * 100).toFixed(1)}%。`
+    : (state.aiPredictions.length ? "AI已完成视觉识别，但未能可靠映射到预设餐食类别，请人工确认。" : "当前未进行AI照片识别。");
+
+  const tips = [
+    `当前目标为「${goalText[state.goal]}」，今日建议热量约 ${calorie} kcal，优先保证蛋白质 ${protein}g。`,
+    state.glucose === "rise" ? "餐后血糖偏高，下一餐减少精制主食，增加蔬菜和优质蛋白。" : state.glucose === "drop" ? "血糖有回落趋势，运动后可补充少量全谷物和水果。" : "血糖趋势稳定，可以保持目前主食比例，并关注晚餐脂肪摄入。",
+    state.sleep < 6.5 ? "睡眠不足会影响食欲调节，今晚建议减少咖啡因并提前安排晚餐。" : "睡眠状态良好，适合安排中等强度运动并维持规律进餐。",
+    state.restrictions.includes("lactose") ? "已避开乳制品，推荐无糖豆浆、豆腐、鱼虾或鸡蛋补充蛋白。" : `识别到「${food.name}」，本餐蛋白 ${food.protein}g，可作为今日主要蛋白来源之一。`,
+    aiLine
+  ];
+
+  if (state.restrictions.includes("lowSalt")) {
+    tips.push("低盐模式已开启，建议选择清蒸、炖煮和天然香辛料调味。");
+  }
+  if (state.restrictions.includes("vegetarian")) {
+    tips.push("素食优先模式下，建议优先使用豆类、菌菇、坚果与全谷物进行蛋白补充。");
+  }
+
+  recommendations.innerHTML = tips.map((tip) => `<li>${tip}</li>`).join("");
+  coachMessage.textContent = `我会根据你的${goalText[state.goal]}目标、可穿戴数据和餐食记录动态调整建议。今天的重点是：${tips[1]}`;
+  drawPlate(food);
+}
+
+function drawPlate(food) {
+  ctx.clearRect(0, 0, 280, 280);
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(140, 140, 116, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 16;
+  ctx.strokeStyle = "#dce4dd";
+  ctx.stroke();
+
+  const total = food.carbs + food.protein + food.fat;
+  const segments = [
+    { label: "碳水", value: food.carbs, color: "#d8a637" },
+    { label: "蛋白", value: food.protein, color: "#2f8a57" },
+    { label: "脂肪", value: food.fat, color: "#d9634f" }
+  ];
+
+  let start = -Math.PI / 2;
+  segments.forEach((segment) => {
+    const angle = (segment.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(140, 140);
+    ctx.arc(140, 140, 95, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = segment.color;
+    ctx.fill();
+    start += angle;
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(140, 140, 45, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#1e2b24";
+  ctx.font = "700 18px Microsoft YaHei, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("膳食", 140, 135);
+  ctx.font = "13px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#65756b";
+  ctx.fillText("平衡图", 140, 156);
+}
+
+function setFood(foodKey, source = "manual") {
+  state.food = foodKey;
+  const food = foods[foodKey];
+  document.querySelector("#foodName").textContent = food.name;
+  document.querySelector("#foodMacro").textContent = food.macro;
+  const foodImage = document.querySelector("#foodImage");
+  if (!state.uploadedImage) {
+    foodImage.className = `food-image ${foodKey === "bowl" ? "" : foodKey}`.trim();
+  }
+  document.querySelectorAll(".segmented button").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.food === foodKey);
+  });
+  if (source === "manual") {
+    aiModeBadgeEl.textContent = `已手动修正为：${categoryMeta[foodKey].label}`;
+  }
+  buildPlan();
+}
+
+function renderPredictions(predictions) {
+  if (!predictions || !predictions.length) {
+    predictionListEl.innerHTML = "Top-5 预测结果将在这里显示。";
+    return;
+  }
+  const listItems = predictions.map((item) => `<li>${item.className}：${(item.probability * 100).toFixed(2)}%</li>`).join("");
+  predictionListEl.innerHTML = `<strong>AI Top-5 预测：</strong><ul>${listItems}</ul>`;
+}
+
+function mapPredictionsToCategory(predictions) {
+  const scores = { bowl: 0, noodle: 0, salad: 0 };
+  predictions.forEach((pred) => {
+    const text = pred.className.toLowerCase();
+    Object.entries(categoryMeta).forEach(([key, meta]) => {
+      if (meta.tags.some((tag) => text.includes(tag))) {
+        scores[key] += pred.probability;
+      }
+    });
+  });
+
+  let bestKey = null;
+  let bestScore = 0;
+  Object.entries(scores).forEach(([key, score]) => {
+    if (score > bestScore) {
+      bestKey = key;
+      bestScore = score;
+    }
+  });
+
+  if (!bestKey || bestScore < 0.15) {
+    return { key: null, confidence: bestScore, scores };
+  }
+  return { key: bestKey, confidence: bestScore, scores };
+}
+
+async function loadModel() {
+  try {
+    modelStatusEl.textContent = "正在加载 AI 图像识别模型（MobileNet）… 首次加载需要联网。";
+    modelStatusEl.className = "model-status loading";
+    model = await mobilenet.load({ version: 2, alpha: 1.0 });
+    modelStatusEl.textContent = "AI模型已就绪，可以上传照片进行识别。";
+    modelStatusEl.className = "model-status ready";
+    aiModeBadgeEl.textContent = "AI模型已加载";
+  } catch (error) {
+    console.error(error);
+    modelStatusEl.textContent = "AI模型加载失败。请检查网络连接，或在可联网环境重新打开此页面。";
+    modelStatusEl.className = "model-status error";
+    recognitionResultEl.textContent = "暂时无法使用AI识别；你仍可手动选择餐食类别。";
+    aiModeBadgeEl.textContent = "AI模型加载失败";
+  }
+}
+
+async function recognizeImage() {
+  if (!model || !previewImg.src) {
+    recognitionResultEl.textContent = "AI模型尚未就绪，无法识别。";
+    return;
+  }
+  recognitionResultEl.textContent = "AI 正在识别图片，请稍候…";
+  aiModeBadgeEl.textContent = "AI识别中";
+
+  try {
+    const predictions = await model.classify(previewImg, 5);
+    state.aiPredictions = predictions;
+    renderPredictions(predictions);
+    const matched = mapPredictionsToCategory(predictions);
+    state.aiMatchedCategory = matched.key;
+    state.aiMatchedConfidence = matched.confidence || 0;
+
+    if (matched.key) {
+      setFood(matched.key, "ai");
+      recognitionResultEl.textContent = `AI识别完成：图片更接近「${categoryMeta[matched.key].label}」类餐食，匹配置信参考值 ${(matched.confidence * 100).toFixed(1)}%。`;
+      aiModeBadgeEl.textContent = `AI识别：${categoryMeta[matched.key].label}`;
+    } else {
+      buildPlan();
+      recognitionResultEl.textContent = "AI 已完成视觉识别，但结果未能可靠映射到预设餐食类别。请参考 Top-5 结果，并在下方手动修正。";
+      aiModeBadgeEl.textContent = "AI识别完成，待人工确认";
+    }
+  } catch (error) {
+    console.error(error);
+    recognitionResultEl.textContent = "AI识别失败，请更换图片重试。";
+    aiModeBadgeEl.textContent = "AI识别失败";
+  }
+}
+
+function handleFoodPhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    recognitionResultEl.textContent = "请选择图片文件。";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.uploadedImage = reader.result;
+    previewImg.src = reader.result;
+    const foodImage = document.querySelector("#foodImage");
+    foodImage.className = "food-image has-upload";
+    foodImage.style.backgroundImage = `url(${reader.result})`;
+    document.querySelector("#photoFileName").textContent = `已选择：${file.name}`;
+    state.aiPredictions = [];
+    state.aiMatchedCategory = null;
+    state.aiMatchedConfidence = 0;
+    renderPredictions([]);
+    previewImg.onload = () => recognizeImage();
+  };
+  reader.readAsDataURL(file);
+}
+
+function answerCoach() {
+  const question = document.querySelector("#coachInput").value.trim();
+  const food = foods[state.food];
+  if (!question) return;
+  const glucoseNote = state.glucose === "rise" ? "主食减半，优先选择全谷物。" : "主食可以保留一拳左右。";
+  const aiNote = state.aiMatchedCategory ? `根据AI识别，这张照片更接近${categoryMeta[state.aiMatchedCategory].label}。` : "当前没有可用的AI餐食识别结论。";
+  coachMessage.textContent = `关于「${question}」：如果今晚已吃过${food.name}，下一餐建议补足深色蔬菜和水分，${glucoseNote}${aiNote} 我会继续结合步数、睡眠和餐后血糖更新计划。`;
+  document.querySelector("#coachInput").value = "";
+}
+
+document.querySelector("#profileForm").addEventListener("input", () => { collectState(); buildPlan(); });
+document.querySelectorAll(".segmented button").forEach((button) => { button.addEventListener("click", () => setFood(button.dataset.food, "manual")); });
+document.querySelector("#refreshPlan").addEventListener("click", () => { collectState(); buildPlan(); });
+document.querySelector("#foodPhoto").addEventListener("change", handleFoodPhoto);
+document.querySelector("#askCoach").addEventListener("click", answerCoach);
+document.querySelector("#coachInput").addEventListener("keydown", (event) => { if (event.key === "Enter") answerCoach(); });
+
+collectState();
+buildPlan();
+loadModel();
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  const btn = document.querySelector("#installApp");
+  if (btn) btn.style.display = "inline-grid";
+});
+
+document.querySelector("#installApp")?.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.querySelector("#installApp").style.display = "none";
+});
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(console.warn));
+}
+
+    </script>
+  </body>
+</html>
