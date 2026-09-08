@@ -370,6 +370,7 @@ const state = {
   aiPredictions: [],
   aiMatchedCategory: null,
   aiMatchedConfidence: 0,
+  recognitionPending: false,
 };
 
 const foods = {
@@ -413,6 +414,73 @@ const categoryMeta = {
   coffee: { label: "杯装咖啡", tags: ["espresso", "coffee", "cup", "mug", "latte"] }
 };
 
+
+const foodAdvice = {
+  bowl: [
+    "轻食碗整体蛋白较充足，下一餐可补充深色蔬菜和少量全谷物，避免额外高脂酱汁。",
+    "若用于减脂，可优先保留鸡胸肉和蔬菜，藜麦或其他主食根据活动量适当调整。"
+  ],
+  noodle: [
+    "面食碳水相对较高，建议搭配鸡蛋、牛肉、豆制品或绿叶菜，提高蛋白质和膳食纤维比例。",
+    "若餐后血糖偏高，可减少面量并避免额外含糖饮料。"
+  ],
+  salad: [
+    "沙拉蔬菜比例较高，但需关注蛋白质是否充足，可搭配鸡蛋、鱼虾、鸡胸肉或豆类。",
+    "牛油果和坚果等脂肪来源营养密度较高，但减脂期间仍需控制总量。"
+  ],
+  riceMeal: [
+    "米饭套餐的主食量较集中，建议保持一半蔬菜、四分之一蛋白、四分之一主食的搭配。",
+    "如今日活动量较低，可适当减少米饭，优先保留鸡腿肉和蔬菜。"
+  ],
+  beefRice: [
+    "牛肉盖饭兼有较高蛋白和较高脂肪，建议减少额外酱汁，并搭配清淡蔬菜。",
+    "若处于控糖减脂目标，可减少约四分之一至三分之一米饭量。"
+  ],
+  beefNoodle: [
+    "牛肉面可提供较多蛋白质，但面条碳水较集中，建议增加青菜并减少高盐汤汁摄入。",
+    "血糖偏高时，可少喝汤、减少面量，并优先食用牛肉和蔬菜。"
+  ],
+  porridge: [
+    "粥品易消化但饱腹持续时间可能较短，建议搭配鸡蛋、豆制品或瘦肉补充蛋白质。",
+    "控糖时不建议仅以粥作为一餐，可增加全谷物颗粒和蔬菜。"
+  ],
+  bun: [
+    "包点以碳水为主，建议搭配鸡蛋、无糖豆浆或瘦肉类食物，避免单独作为完整一餐。",
+    "若是早餐，可增加一份蔬菜或低糖水果改善膳食结构。"
+  ],
+  seafood: [
+    "鱼虾类蛋白质质量较高，适合作为主要蛋白来源，建议优先选择清蒸、白灼等低油烹调方式。",
+    "若同时控制体重和心血管风险，可减少油炸或浓汁做法。"
+  ],
+  hotpot: [
+    "火锅常伴随较高油脂和钠摄入，建议优先选择蔬菜、菌菇、鱼虾和瘦肉，并减少加工丸类。",
+    "汤底和蘸料应适量，低盐目标下尤其建议避免大量饮用火锅汤。"
+  ],
+  burger: [
+    "汉堡能量和脂肪通常较高，建议搭配无糖饮料和蔬菜，避免同时摄入薯条和甜点。",
+    "如果今天已摄入汉堡，下一餐建议以蔬菜、优质蛋白和较少主食为主。"
+  ],
+  fruit: [
+    "水果适合作为加餐而不是完全替代正餐，建议同时关注蛋白质和主食摄入。",
+    "若为酸奶水果杯，应优先选择无糖酸奶，并注意额外蜂蜜、糖浆和坚果的用量。"
+  ],
+  mungDrink: [
+    "百合绿豆水可能含较多糖分，建议作为饮品适量饮用，不宜替代白水。",
+    "控糖或减脂时建议选择少糖/无糖版本，并避免与甜点同时摄入。"
+  ],
+  coffee: [
+    "杯装咖啡的主要差异来自牛奶、糖浆和奶油；若控糖减脂，建议优先选择无糖美式或少糖拿铁。",
+    "如果本杯含糖，后续饮品建议选择白水或无糖茶，避免短时间内重复摄入含糖饮料。"
+  ]
+};
+
+function getFoodSpecificAdvice(foodKey) {
+  return foodAdvice[foodKey] || [
+    "当前餐食已记录，建议结合总能量、蛋白质和蔬菜摄入情况调整下一餐。",
+    "若识别结果不准确，可手动修正餐食类别，系统会立即重新生成建议。"
+  ];
+}
+
 const recommendations = document.querySelector("#recommendations");
 const coachMessage = document.querySelector("#coachMessage");
 const plateCanvas = document.querySelector("#plateCanvas");
@@ -435,7 +503,7 @@ function collectState() {
 }
 
 function buildPlan() {
-  const food = foods[state.food];
+  const food = state.food ? foods[state.food] : null;
   const activeScore = Math.min(18, Math.floor(state.steps / 700));
   const sleepScore = Math.max(0, Math.round((state.sleep - 4) * 7));
   const glucosePenalty = state.glucose === "rise" ? 12 : state.glucose === "drop" ? 7 : 0;
@@ -450,28 +518,60 @@ function buildPlan() {
   document.querySelector("#riskTag").textContent = score >= 82 ? "代谢风险低" : score >= 68 ? "需要关注血糖" : "建议优化作息";
   document.querySelector("#updatedAt").textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 
-  const aiLine = state.aiMatchedCategory
-    ? `AI识别到照片更接近「${categoryMeta[state.aiMatchedCategory].label}」类餐食，匹配置信参考值 ${(state.aiMatchedConfidence * 100).toFixed(1)}%。`
-    : (state.aiPredictions.length ? "AI已完成视觉识别，但未能可靠映射到预设餐食类别，请人工确认。" : "当前未进行AI照片识别。");
+  let recognitionLine = "当前未进行AI照片识别。";
+  if (state.recognitionPending) {
+    recognitionLine = "照片已上传，AI正在识别中；识别完成后会自动刷新本区建议。";
+  } else if (state.aiMatchedCategory) {
+    recognitionLine = `AI识别结果：更接近「${categoryMeta[state.aiMatchedCategory].label}」，匹配置信参考值 ${(state.aiMatchedConfidence * 100).toFixed(1)}%。`;
+  } else if (state.aiPredictions.length) {
+    recognitionLine = "AI已完成视觉识别，但未能可靠映射到预设餐食类别；当前不会使用默认餐食生成误导性建议，请手动确认类别。";
+  }
 
   const tips = [
     `当前目标为「${goalText[state.goal]}」，今日建议热量约 ${calorie} kcal，优先保证蛋白质 ${protein}g。`,
-    state.glucose === "rise" ? "餐后血糖偏高，下一餐减少精制主食，增加蔬菜和优质蛋白。" : state.glucose === "drop" ? "血糖有回落趋势，运动后可补充少量全谷物和水果。" : "血糖趋势稳定，可以保持目前主食比例，并关注晚餐脂肪摄入。",
-    state.sleep < 6.5 ? "睡眠不足会影响食欲调节，今晚建议减少咖啡因并提前安排晚餐。" : "睡眠状态良好，适合安排中等强度运动并维持规律进餐。",
-    state.restrictions.includes("lactose") ? "已避开乳制品，推荐无糖豆浆、豆腐、鱼虾或鸡蛋补充蛋白。" : `识别到「${food.name}」，本餐蛋白 ${food.protein}g，可作为今日主要蛋白来源之一。`,
-    aiLine
+    state.glucose === "rise"
+      ? "餐后血糖偏高，下一餐减少精制主食，增加蔬菜和优质蛋白。"
+      : state.glucose === "drop"
+        ? "血糖有回落趋势，运动后可补充少量全谷物和水果。"
+        : "血糖趋势稳定，可以保持目前主食比例，并关注晚餐脂肪摄入。",
+    state.sleep < 6.5
+      ? "睡眠不足会影响食欲调节，今晚建议减少咖啡因并提前安排晚餐。"
+      : "睡眠状态良好，适合安排中等强度运动并维持规律进餐。",
+    recognitionLine
   ];
 
+  if (food && !state.recognitionPending) {
+    tips.push(`当前确认餐食为「${food.name}」：${food.macro}。`);
+    tips.push(...getFoodSpecificAdvice(state.food));
+  }
+
+  if (state.restrictions.includes("lactose")) {
+    tips.push("乳糖不耐已开启：优先选择无乳糖奶、无糖豆浆、豆腐、鱼虾或鸡蛋补充蛋白。");
+  }
   if (state.restrictions.includes("lowSalt")) {
-    tips.push("低盐模式已开启，建议选择清蒸、炖煮和天然香辛料调味。");
+    tips.push("低盐模式已开启：建议选择清蒸、炖煮和天然香辛料调味，并减少汤汁、酱料和加工食品。");
   }
   if (state.restrictions.includes("vegetarian")) {
-    tips.push("素食优先模式下，建议优先使用豆类、菌菇、坚果与全谷物进行蛋白补充。");
+    tips.push("素食优先模式下：建议优先使用豆类、菌菇、坚果与全谷物组合补充蛋白质。");
+  }
+  if (score < 70) {
+    tips.push("健康评分偏低，建议先稳定作息和进餐规律，再逐步优化饮食结构。");
   }
 
   recommendations.innerHTML = tips.map((tip) => `<li>${tip}</li>`).join("");
-  coachMessage.textContent = `我会根据你的${goalText[state.goal]}目标、可穿戴数据和餐食记录动态调整建议。今天的重点是：${tips[1]}`;
-  drawPlate(food);
+  coachMessage.textContent = food
+    ? `我会根据你的${goalText[state.goal]}目标、可穿戴数据和当前餐食「${food.name}」动态调整建议。`
+    : `我会根据你的${goalText[state.goal]}目标和可穿戴数据动态调整建议；当前餐食还需要确认。`;
+
+  if (food) {
+    drawPlate(food);
+  } else {
+    ctx.clearRect(0, 0, 280, 280);
+    ctx.fillStyle = "#65756b";
+    ctx.font = "14px Microsoft YaHei, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("等待确认餐食类别", 140, 140);
+  }
 }
 
 function drawPlate(food) {
@@ -528,6 +628,7 @@ function renderFoodPicker() {
 
 function setFood(foodKey, source = "manual") {
   state.food = foodKey;
+  state.recognitionPending = false;
   const food = foods[foodKey];
   document.querySelector("#foodName").textContent = food.name;
   document.querySelector("#foodMacro").textContent = food.macro;
@@ -539,8 +640,11 @@ function setFood(foodKey, source = "manual") {
     button.classList.toggle("selected", button.dataset.food === foodKey);
   });
   if (source === "manual") {
+    state.aiMatchedCategory = foodKey;
+    state.aiMatchedConfidence = 1;
     aiModeBadgeEl.textContent = `已手动修正为：${categoryMeta[foodKey].label}`;
   }
+  renderFoodPicker();
   buildPlan();
 }
 
@@ -617,13 +721,21 @@ async function recognizeImage() {
       recognitionResultEl.textContent = `AI识别完成：图片更接近「${categoryMeta[matched.key].label}」类餐食，匹配置信参考值 ${(matched.confidence * 100).toFixed(1)}%。`;
       aiModeBadgeEl.textContent = `AI识别：${categoryMeta[matched.key].label}`;
     } else {
+      state.recognitionPending = false;
+      state.food = null;
+      document.querySelector("#foodName").textContent = "待确认餐食";
+      document.querySelector("#foodMacro").textContent = "AI未能可靠分类，请手动选择类别后生成营养建议";
+      renderFoodPicker();
       buildPlan();
-      recognitionResultEl.textContent = "AI 已完成视觉识别，但结果未能可靠映射到预设餐食类别。请参考 Top-5 结果，并在下方手动修正。";
+      recognitionResultEl.textContent = "AI 已完成视觉识别，但结果未能可靠映射到预设餐食类别。请参考 Top-5 结果，并在下方手动修正；系统不会继续沿用默认餐食。";
       aiModeBadgeEl.textContent = "AI识别完成，待人工确认";
     }
   } catch (error) {
     console.error(error);
-    recognitionResultEl.textContent = "AI识别失败，请更换图片重试。";
+    state.recognitionPending = false;
+    state.food = null;
+    buildPlan();
+    recognitionResultEl.textContent = "AI识别失败，请更换图片重试，或在下方手动选择餐食类别。";
     aiModeBadgeEl.textContent = "AI识别失败";
   }
 }
@@ -647,7 +759,13 @@ function handleFoodPhoto(event) {
     state.aiPredictions = [];
     state.aiMatchedCategory = null;
     state.aiMatchedConfidence = 0;
+    state.recognitionPending = true;
+    state.food = null;
+    document.querySelector("#foodName").textContent = "AI识别中…";
+    document.querySelector("#foodMacro").textContent = "识别完成后将自动更新营养卡和个性化推荐";
     renderPredictions([]);
+    renderFoodPicker();
+    buildPlan();
     previewImg.onload = () => recognizeImage();
   };
   reader.readAsDataURL(file);
@@ -655,11 +773,12 @@ function handleFoodPhoto(event) {
 
 function answerCoach() {
   const question = document.querySelector("#coachInput").value.trim();
-  const food = foods[state.food];
+  const food = state.food ? foods[state.food] : null;
   if (!question) return;
   const glucoseNote = state.glucose === "rise" ? "主食减半，优先选择全谷物。" : "主食可以保留一拳左右。";
-  const aiNote = state.aiMatchedCategory ? `根据AI识别，这张照片更接近${categoryMeta[state.aiMatchedCategory].label}。` : "当前没有可用的AI餐食识别结论。";
-  coachMessage.textContent = `关于「${question}」：如果今晚已吃过${food.name}，下一餐建议补足深色蔬菜和水分，${glucoseNote}${aiNote} 我会继续结合步数、睡眠和餐后血糖更新计划。`;
+  const aiNote = state.aiMatchedCategory ? `根据AI识别，这张照片更接近${categoryMeta[state.aiMatchedCategory].label}。` : "当前没有可靠的AI餐食分类结论。";
+  const foodNote = food ? `如果今晚已吃过${food.name}，` : "当前餐食类别尚未确认，";
+  coachMessage.textContent = `关于「${question}」：${foodNote}下一餐建议补足深色蔬菜和水分，${glucoseNote}${aiNote} 我会继续结合步数、睡眠和餐后血糖更新计划。`;
   document.querySelector("#coachInput").value = "";
 }
 
