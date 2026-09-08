@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="AI智营宝" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-    <title>AI智营宝 - AI照片识别版</title>
+    <title>AI智营宝 V1.1 - AI照片识别版</title>
     <style>
 :root {
   color-scheme: light;
@@ -161,7 +161,21 @@ fieldset {
   .quick-stats, .input-panel form { grid-template-columns: 1fr; }
   .topbar { align-items: flex-start; }
 }
-    </style>
+    
+.food-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  align-items: stretch;
+}
+.food-picker button { min-width: 0; }
+@media (max-width: 620px) {
+  .food-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+</style>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1"></script>
   </head>
@@ -172,7 +186,7 @@ fieldset {
           <div class="brand-mark">AI</div>
           <div>
             <strong>AI智营宝</strong>
-            <span>智能健康与营养管理助手 · AI照片识别版</span>
+            <span>智能健康与营养管理助手 · V1.1 AI照片识别版</span>
           </div>
         </div>
         <nav class="nav-list">
@@ -204,7 +218,7 @@ fieldset {
 
         <section class="hero-panel">
           <div class="hero-copy">
-            <p>根据身体数据、餐食记录和健康目标，实时生成营养建议。现已支持使用视觉 AI 对上传照片进行识别，并将识别结果用于营养推荐。</p>
+            <p>根据身体数据、餐食记录和健康目标，实时生成营养建议。V1.1 已扩展餐食与饮品类别，并支持使用视觉 AI 对上传照片进行识别，将识别结果用于营养推荐。</p>
             <div class="quick-stats" aria-label="今日健康摘要">
               <div><strong id="scoreValue">86</strong><span>健康评分</span></div>
               <div><strong id="calorieValue">1640</strong><span>建议热量</span></div>
@@ -289,11 +303,7 @@ fieldset {
                 <span id="foodMacro">520 kcal · 蛋白 42g · 脂肪 15g</span>
               </div>
             </div>
-            <div class="segmented" aria-label="手动修正餐食">
-              <button class="selected" data-food="bowl">轻食碗</button>
-              <button data-food="noodle">面食</button>
-              <button data-food="salad">沙拉</button>
-            </div>
+            <div class="segmented food-picker" id="foodPicker" aria-label="手动修正餐食"></div>
             <div class="recognition-note">提示：这是“真正的 AI 图片识别”，不再按文件名判断。若 AI 识别不准确，可在下方手动修正餐食类别。</div>
             <div class="recognition-note">手机端：点击“拍照 / 选择餐食照片”可直接调起后置摄像头；浏览器支持时，可通过右上角“＋”安装到主屏幕。</div>
             <img id="previewImg" class="hidden-preview" alt="预览图" />
@@ -361,7 +371,18 @@ const state = {
 const foods = {
   bowl: { name: "鸡胸藜麦碗", macro: "520 kcal · 蛋白 42g · 脂肪 15g", carbs: 34, protein: 42, fat: 15 },
   noodle: { name: "番茄牛肉面", macro: "690 kcal · 蛋白 31g · 碳水 92g", carbs: 92, protein: 31, fat: 21 },
-  salad: { name: "牛油果彩蔬沙拉", macro: "410 kcal · 蛋白 18g · 脂肪 24g", carbs: 28, protein: 18, fat: 24 }
+  salad: { name: "牛油果彩蔬沙拉", macro: "410 kcal · 蛋白 18g · 脂肪 24g", carbs: 28, protein: 18, fat: 24 },
+  riceMeal: { name: "糙米鸡腿饭", macro: "630 kcal · 蛋白 36g · 碳水 76g", carbs: 76, protein: 36, fat: 18 },
+  beefRice: { name: "温泉蛋牛肉盖饭", macro: "760 kcal · 蛋白 42g · 碳水 72g", carbs: 72, protein: 42, fat: 32 },
+  beefNoodle: { name: "清汤牛肉面", macro: "720 kcal · 蛋白 36g · 碳水 88g", carbs: 88, protein: 36, fat: 24 },
+  porridge: { name: "南瓜燕麦粥", macro: "360 kcal · 蛋白 14g · 碳水 58g", carbs: 58, protein: 14, fat: 8 },
+  bun: { name: "全麦鸡蛋包", macro: "450 kcal · 蛋白 22g · 碳水 62g", carbs: 62, protein: 22, fat: 12 },
+  seafood: { name: "清蒸鱼虾蔬菜盘", macro: "480 kcal · 蛋白 45g · 脂肪 12g", carbs: 30, protein: 45, fat: 12 },
+  hotpot: { name: "番茄菌菇小火锅", macro: "780 kcal · 蛋白 38g · 脂肪 35g", carbs: 68, protein: 38, fat: 35 },
+  burger: { name: "牛肉芝士汉堡", macro: "850 kcal · 蛋白 34g · 脂肪 46g", carbs: 72, protein: 34, fat: 46 },
+  fruit: { name: "酸奶莓果杯", macro: "290 kcal · 蛋白 12g · 碳水 42g", carbs: 42, protein: 12, fat: 7 },
+  mungDrink: { name: "百合绿豆水", macro: "165 kcal · 糖 28g · 蛋白 2g", carbs: 34, protein: 2, fat: 0 },
+  coffee: { name: "Costa 杯装咖啡", macro: "180 kcal · 糖 18g · 脂肪 6g", carbs: 24, protein: 6, fat: 6 }
 };
 
 const goalText = {
@@ -372,9 +393,20 @@ const goalText = {
 };
 
 const categoryMeta = {
-  bowl: { label: "轻食碗", tags: ["bowl", "rice", "bibimbap", "burrito", "omelet", "chicken", "meat loaf", "fried rice", "plate"] },
-  noodle: { label: "面食", tags: ["noodle", "ramen", "spaghetti", "pasta", "carbonara", "macaroni", "lasagna", "udon", "pho", "soup bowl", "consomme"] },
-  salad: { label: "沙拉", tags: ["salad", "broccoli", "vegetable", "cabbage", "lettuce", "cucumber", "guacamole", "bell pepper", "zucchini", "caesar"] }
+  bowl: { label: "轻食碗", tags: ["bowl", "chicken", "quinoa", "omelet", "plate"] },
+  noodle: { label: "面食", tags: ["noodle", "spaghetti", "pasta", "carbonara", "macaroni", "ramen"] },
+  salad: { label: "沙拉", tags: ["salad", "broccoli", "vegetable", "cabbage", "lettuce", "cucumber", "guacamole", "zucchini"] },
+  riceMeal: { label: "米饭套餐", tags: ["rice", "fried rice", "bibimbap", "paella", "pilaf"] },
+  beefRice: { label: "牛肉盖饭", tags: ["beef", "steak", "meat loaf", "pot roast"] },
+  beefNoodle: { label: "牛肉面", tags: ["ramen", "consomme", "soup bowl", "beef"] },
+  porridge: { label: "粥品", tags: ["porridge", "oatmeal", "cereal", "gruel"] },
+  bun: { label: "包点", tags: ["bun", "bagel", "pretzel", "bread", "dumpling"] },
+  seafood: { label: "鱼虾", tags: ["fish", "shrimp", "lobster", "crab", "seafood", "salmon"] },
+  hotpot: { label: "火锅", tags: ["hot pot", "soup", "stew", "cauldron"] },
+  burger: { label: "汉堡", tags: ["cheeseburger", "hamburger", "hotdog", "pizza", "french loaf"] },
+  fruit: { label: "水果", tags: ["strawberry", "banana", "orange", "lemon", "apple", "pineapple", "fig", "berry", "yogurt"] },
+  mungDrink: { label: "百合绿豆水", tags: ["cup", "glass", "drink", "beverage", "juice"] },
+  coffee: { label: "杯装咖啡", tags: ["espresso", "coffee", "cup", "mug", "latte"] }
 };
 
 const recommendations = document.querySelector("#recommendations");
@@ -480,6 +512,16 @@ function drawPlate(food) {
   ctx.fillText("平衡图", 140, 156);
 }
 
+function renderFoodPicker() {
+  const picker = document.querySelector("#foodPicker");
+  picker.innerHTML = Object.entries(categoryMeta).map(([key, meta]) =>
+    `<button type="button" data-food="${key}" class="${key === state.food ? "selected" : ""}">${meta.label}</button>`
+  ).join("");
+  picker.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => setFood(button.dataset.food, "manual"));
+  });
+}
+
 function setFood(foodKey, source = "manual") {
   state.food = foodKey;
   const food = foods[foodKey];
@@ -508,7 +550,7 @@ function renderPredictions(predictions) {
 }
 
 function mapPredictionsToCategory(predictions) {
-  const scores = { bowl: 0, noodle: 0, salad: 0 };
+  const scores = Object.fromEntries(Object.keys(categoryMeta).map((key) => [key, 0]));
   predictions.forEach((pred) => {
     const text = pred.className.toLowerCase();
     Object.entries(categoryMeta).forEach(([key, meta]) => {
@@ -618,12 +660,13 @@ function answerCoach() {
 }
 
 document.querySelector("#profileForm").addEventListener("input", () => { collectState(); buildPlan(); });
-document.querySelectorAll(".segmented button").forEach((button) => { button.addEventListener("click", () => setFood(button.dataset.food, "manual")); });
+
 document.querySelector("#refreshPlan").addEventListener("click", () => { collectState(); buildPlan(); });
 document.querySelector("#foodPhoto").addEventListener("change", handleFoodPhoto);
 document.querySelector("#askCoach").addEventListener("click", answerCoach);
 document.querySelector("#coachInput").addEventListener("keydown", (event) => { if (event.key === "Enter") answerCoach(); });
 
+renderFoodPicker();
 collectState();
 buildPlan();
 loadModel();
