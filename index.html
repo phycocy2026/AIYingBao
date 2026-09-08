@@ -129,6 +129,7 @@ fieldset {
   display: inline-block; padding: 10px 14px; border-radius: 8px; background: var(--green); color: #fff; cursor: pointer; font-weight: 700;
 }
 .upload-label input { display: none; }
+.upload-label.upload-secondary { background: #eef4ef; color: var(--green); border: 1px solid #b8dcc7; }
 .upload-hint, .recognition-note, .model-note { color: var(--muted); font-size: 13px; line-height: 1.6; }
 .recognition-result, .model-status, .prediction-list {
   margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #eef4ef; font-size: 14px;
@@ -284,10 +285,13 @@ fieldset {
             <div id="modelStatus" class="model-status loading">正在加载 AI 图像识别模型（MobileNet）… 首次加载需要联网。</div>
             <div class="upload-box">
               <div class="upload-row">
-                <label class="upload-label">拍照 / 选择餐食照片
-                  <input id="foodPhoto" type="file" accept="image/*" capture="environment" />
+                <label class="upload-label">拍照识别
+                  <input id="foodCamera" type="file" accept="image/*" capture="environment" />
                 </label>
-                <span id="photoFileName" class="upload-hint">支持 JPG、PNG、WEBP；照片仅在本机浏览器中处理。</span>
+                <label class="upload-label upload-secondary">上传照片
+                  <input id="foodPhoto" type="file" accept="image/*" />
+                </label>
+                <span id="photoFileName" class="upload-hint">支持 JPG、PNG、WEBP；可直接拍照，也可从手机相册或电脑中上传。</span>
               </div>
               <div class="recognition-summary">
                 <span class="recognition-badge" id="aiModeBadge">AI识别未开始</span>
@@ -305,7 +309,7 @@ fieldset {
             </div>
             <div class="segmented food-picker" id="foodPicker" aria-label="手动修正餐食"></div>
             <div class="recognition-note">提示：这是“真正的 AI 图片识别”，不再按文件名判断。若 AI 识别不准确，可在下方手动修正餐食类别。</div>
-            <div class="recognition-note">手机端：点击“拍照 / 选择餐食照片”可直接调起后置摄像头；浏览器支持时，可通过右上角“＋”安装到主屏幕。</div>
+            <div class="recognition-note">手机端：“拍照识别”直接调起后置摄像头；“上传照片”可从相册选择。电脑端使用“上传照片”选择本地图片。浏览器支持时，可通过右上角“＋”安装到主屏幕。</div>
             <img id="previewImg" class="hidden-preview" alt="预览图" />
           </article>
 
@@ -663,6 +667,7 @@ document.querySelector("#profileForm").addEventListener("input", () => { collect
 
 document.querySelector("#refreshPlan").addEventListener("click", () => { collectState(); buildPlan(); });
 document.querySelector("#foodPhoto").addEventListener("change", handleFoodPhoto);
+document.querySelector("#foodCamera").addEventListener("change", handleFoodPhoto);
 document.querySelector("#askCoach").addEventListener("click", answerCoach);
 document.querySelector("#coachInput").addEventListener("keydown", (event) => { if (event.key === "Enter") answerCoach(); });
 

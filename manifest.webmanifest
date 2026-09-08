@@ -1,11 +1,11 @@
 {
-  "name": "AI智营宝 V1.1 - 智能健康与营养管理助手",
+  "name": "AI智营宝 V1.1.1 - 智能健康与营养管理助手",
   "short_name": "AI智营宝",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f7f4",
   "theme_color": "#10251c",
-  "description": "V1.1：支持手机拍照、AI餐食与饮品识别、健康评分和营养推荐",
+  "description": "V1.1.1：支持手机拍照、AI餐食与饮品识别、健康评分和营养推荐",
   "icons": [
     {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png"}
